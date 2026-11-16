@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "layoutexpo"
+version = "0.2.4"
+description = "LayoutExpo — Estudio 2D de Curaduría, Montaje y Asistencia por Proyector para Exposiciones Fotográficas"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+  { name = "César Fernández Ardiles" },
+]
+dependencies = []
+
+[project.optional-dependencies]
+app = [
+  "flask>=3.1.0,<4.0.0",
+  "Pillow>=11.0.0,<14.0.0",
+  "reportlab>=4.2.0,<5.0.0",
+  "pywebview>=6.0.0,<7.0.0",
+  "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
+  "pyobjc-framework-WebKit>=10.0; sys_platform == 'darwin'",
+  "pythonnet>=3.0.3; sys_platform == 'win32'",
+]
+dev = [
+  "pytest>=8.0.0",
+  "mypy>=1.10.0",
+  "ruff>=0.5.0",
+  "pip-audit>=2.7.0",
+  "playwright>=1.50.0",
+  "axe-playwright-python>=0.1.7",
+]
+build = [
+  "pyinstaller>=6.6.0,<7.0.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["core*", "server*", "desktop*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+pythonpath = ["."]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "UP", "S"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+disallow_any_generics = true
+no_implicit_reexport = true
+files = ["core", "server", "desktop", "tests", "main.py"]
+
+[[tool.mypy.overrides]]
+module = ["reportlab.*", "webview", "webview.*", "axe_playwright_python.*"]
+ignore_missing_imports = true

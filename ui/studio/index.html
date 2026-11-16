@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LayoutExpo — Estudio de Montaje</title>
+    <link rel="icon" type="image/png" href="/ui/assets/icon.png" />
+    <link rel="stylesheet" href="/ui/tokens.css" />
+    <link rel="stylesheet" href="/ui/studio/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-canvas">Ir al lienzo de montaje</a>
+
+    <div id="app-shell" class="app-shell">
+      <header class="topbar" aria-label="Barra de herramientas principal">
+        <div class="topbar-group">
+          <img src="/ui/assets/icon.svg" alt="" class="brand-icon" width="32" height="32" />
+          <label class="sr-only" for="project-title">Título de la exposición</label>
+          <input
+            id="project-title"
+            class="title-input"
+            type="text"
+            value="Nueva Exposición"
+            autocomplete="off"
+          />
+
+          <label class="sr-only" for="wall-select">Muro activo</label>
+          <select id="wall-select" class="select-control"></select>
+          <button id="btn-add-wall" type="button" class="btn btn-secondary" title="Agregar nuevo muro">
+            + Muro
+          </button>
+        </div>
+
+        <div class="topbar-group">
+          <details id="file-menu" class="topbar-menu">
+            <summary class="btn btn-secondary">Archivo ▾</summary>
+            <div class="topbar-menu-list" role="group" aria-label="Archivo y exportación">
+              <button id="btn-open-project" type="button" class="btn btn-secondary">Abrir proyecto…</button>
+              <button id="btn-save-project" type="button" class="btn btn-secondary">Guardar (Cmd/Ctrl+S)</button>
+              <button id="btn-import-photos" type="button" class="btn btn-secondary">Importar fotos…</button>
+              <button id="btn-export-pdf" type="button" class="btn btn-secondary">Exportar PDF</button>
+            </div>
+          </details>
+          <input
+            id="file-upload-input"
+            type="file"
+            accept=".jpg,.jpeg,.png,.tif,.tiff"
+            multiple
+            hidden
+          />
+          <input
+            id="project-upload-input"
+            type="file"
+            accept=".layoutexpo,.json"
+            hidden
+          />
+        </div>
+
+        <div class="topbar-group" role="group" aria-label="Herramientas de distribución">
+          <button id="btn-undo" type="button" class="btn btn-secondary" title="Deshacer (Cmd/Ctrl+Z)" disabled>
+            Deshacer
+          </button>
+          <button id="btn-redo" type="button" class="btn btn-secondary" title="Rehacer (Cmd/Ctrl+Shift+Z)" disabled>
+            Rehacer
+          </button>
+          <button id="btn-align-eye" type="button" class="btn btn-secondary" title="Centrar selección en eje visual">
+            Alinear eje
+          </button>
+          <button id="btn-distribute" type="button" class="btn btn-secondary" title="Distribuir horizontalmente">
+            Distribuir
+          </button>
+          <label class="sr-only" for="reorganize-scope">Alcance de reorganización armónica</label>
+          <select id="reorganize-scope" class="select-control" title="Alcance de reorganización">
+            <option value="active_wall">Muro activo</option>
+            <option value="all_walls">Toda la expo</option>
+          </select>
+          <button
+            id="btn-reorganize"
+            type="button"
+            class="btn btn-secondary"
+            title="Reorganización armónica y compositiva"
+          >
+            Armónica
+          </button>
+          <button
+            id="btn-presets-toggle"
+            type="button"
+            class="btn btn-secondary"
+            aria-expanded="false"
+            aria-controls="presets-panel"
+            title="Aplicar plantilla predefinida de galería o museo"
+          >
+            Plantillas
+          </button>
+          <button id="btn-clean-view" type="button" class="btn btn-secondary" aria-pressed="false">
+            Vista limpia
+          </button>
+          <button id="btn-projector-toggle" type="button" class="btn btn-primary" aria-pressed="false">
+            Proyector
+          </button>
+        </div>
+      </header>
+
+      <div class="workspace-grid">
+        <aside id="panel-catalog" class="sidebar sidebar-left" aria-label="Catálogo de obras">
+          <div class="panel-header">
+            <h1 class="panel-title">Catálogo de Obras</h1>
+            <button id="btn-add-measured" type="button" class="btn btn-sm btn-secondary">
+              + Por medidas
+            </button>
+          </div>
+
+          <div id="catalog-dropzone" class="dropzone" tabindex="0" role="button" aria-label="Importar fotografías JPEG, PNG o TIFF">
+            <p class="dropzone-title">Arrastra JPEG, PNG o TIFF</p>
+            <p class="dropzone-sub">Lectura 100 % no destructiva</p>
+          </div>
+
+          <div class="field">
+            <label for="import-size-preset">Tamaño inicial al importar</label>
+            <select id="import-size-preset">
+              <option value="max50" selected>Lado mayor = 50 cm (estándar)</option>
+              <option value="max40">Lado mayor = 40 cm</option>
+              <option value="max70">Lado mayor = 70 cm</option>
+              <option value="dpi">Según DPI del archivo</option>
+            </select>
+          </div>
+
+          <button id="btn-place-unplaced" type="button" class="btn btn-sm btn-secondary hidden">
+            Colocar obras pendientes en muro
+          </button>
+
+          <ul id="catalog-list" class="catalog-list" aria-label="Lista de obras disponibles"></ul>
+        </aside>
+
+        <main id="main-canvas" class="canvas-stage" tabindex="-1" aria-label="Lienzo de montaje 2D a escala real">
+          <button
+            id="btn-exit-clean"
+            type="button"
+            class="btn btn-secondary floating-restore hidden"
+          >
+            Salir de vista limpia (V)
+          </button>
+
+          <div id="issues-banner" class="issues-banner hidden" role="status" aria-live="polite"></div>
+          <div id="toast-banner" class="toast-banner hidden" role="status" aria-live="polite"></div>
+
+          <aside
+            id="curation-report"
+            class="curation-report hidden"
+            role="region"
+            aria-label="Reporte de reorganización armónica"
+          >
+            <div class="curation-report-header">
+              <h2 class="curation-report-title">Criterio de Reorganización Armónica</h2>
+              <button
+                id="btn-close-curation"
+                type="button"
+                class="btn btn-sm btn-secondary close-report-btn"
+                aria-label="Cerrar reporte de reorganización"
+              >
+                ×
+              </button>
+            </div>
+            <ul id="curation-rationale-list" class="curation-list"></ul>
+            <ul id="curation-warnings-list" class="curation-warnings"></ul>
+            <div class="curation-report-actions">
+              <button id="btn-undo-curation" type="button" class="btn btn-sm btn-secondary">
+                Deshacer reorganización
+              </button>
+            </div>
+          </aside>
+
+          <aside
+            id="presets-panel"
+            class="presets-panel hidden"
+            role="region"
+            aria-label="Plantillas de composición predefinidas"
+          >
+            <div class="curation-report-header">
+              <h2 class="curation-report-title">Plantillas de Composición</h2>
+              <button
+                id="btn-close-presets"
+                type="button"
+                class="btn btn-sm btn-secondary close-report-btn"
+                aria-label="Cerrar selector de plantillas"
+              >
+                ×
+              </button>
+            </div>
+            <div class="presets-options">
+              <div class="field">
+                <label for="preset-scale">Escala de marcos</label>
+                <select id="preset-scale">
+                  <option value="1" selected>Estándar (10×15 – 21×30 cm)</option>
+                  <option value="1.5">Media (×1.5)</option>
+                  <option value="2">Galería / Museo (×2)</option>
+                </select>
+              </div>
+              <label class="checkbox-field">
+                <input id="preset-preserve-aspect" type="checkbox" checked />
+                <span>Mantener proporción de tus fotos</span>
+              </label>
+            </div>
+            <div id="presets-grid" class="presets-grid"></div>
+          </aside>
+
+          <div id="canvas-viewport" class="canvas-viewport">
+            <svg
+              id="wall-svg"
+              xmlns="http://www.w3.org/2000/svg"
+              role="region"
+              aria-label="Elevación frontal del muro"
+            ></svg>
+          </div>
+
+          <div class="canvas-controls" role="toolbar" aria-label="Controles de visualización del lienzo">
+            <button id="btn-zoom-out" type="button" class="btn btn-sm btn-secondary" aria-label="Alejar">
+              −
+            </button>
+            <button id="btn-zoom-fit" type="button" class="btn btn-sm btn-secondary">
+              Ajustar
+            </button>
+            <button id="btn-zoom-in" type="button" class="btn btn-sm btn-secondary" aria-label="Acercar">
+              +
+            </button>
+            <span class="divider" aria-hidden="true"></span>
+            <button id="btn-toggle-unit" type="button" class="btn btn-sm btn-secondary">
+              cm
+            </button>
+            <button id="btn-toggle-dims" type="button" class="btn btn-sm btn-secondary" aria-pressed="true">
+              Cotas
+            </button>
+            <button id="btn-toggle-anchors" type="button" class="btn btn-sm btn-secondary" aria-pressed="true">
+              Anclajes
+            </button>
+            <button id="btn-toggle-eye" type="button" class="btn btn-sm btn-secondary" aria-pressed="true">
+              Eje visual
+            </button>
+            <span class="divider" aria-hidden="true"></span>
+            <button
+              id="btn-shortcuts-toggle"
+              type="button"
+              class="btn btn-sm btn-secondary"
+              aria-expanded="false"
+              aria-controls="shortcuts-panel"
+              aria-label="Atajos de teclado"
+              title="Atajos de teclado"
+            >
+              ?
+            </button>
+          </div>
+
+          <aside
+            id="shortcuts-panel"
+            class="shortcuts-panel hidden"
+            role="region"
+            aria-label="Atajos de teclado"
+          >
+            <div class="curation-report-header">
+              <h2 class="curation-report-title">Atajos de teclado</h2>
+              <button
+                id="btn-close-shortcuts"
+                type="button"
+                class="btn btn-sm btn-secondary close-report-btn"
+                aria-label="Cerrar atajos de teclado"
+              >
+                ×
+              </button>
+            </div>
+            <ul class="shortcuts-list">
+              <li><span>Mover obra 1 mm</span><kbd>Flechas</kbd></li>
+              <li><span>Mover obra 1 cm</span><kbd>Shift + Flechas</kbd></li>
+              <li><span>Redimensionar obra</span><kbd>Alt + Flechas</kbd></li>
+              <li><span>Retirar obra del muro</span><kbd>Delete / Backspace</kbd></li>
+              <li><span>Deshacer</span><kbd>Cmd/Ctrl + Z</kbd></li>
+              <li><span>Rehacer</span><kbd>Cmd/Ctrl + Shift + Z</kbd></li>
+              <li><span>Guardar proyecto</span><kbd>Cmd/Ctrl + S</kbd></li>
+              <li><span>Vista limpia</span><kbd>V</kbd></li>
+              <li><span>Cerrar paneles</span><kbd>Esc</kbd></li>
+            </ul>
+          </aside>
+        </main>
+
+        <aside id="panel-inspector" class="sidebar sidebar-right" aria-label="Inspector de propiedades">
+          <div class="tablist" role="tablist" aria-label="Secciones del inspector">
+            <button
+              id="tab-artwork"
+              class="tab-btn"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="tabpanel-artwork"
+            >
+              Obra
+            </button>
+            <button
+              id="tab-wall"
+              class="tab-btn"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tabpanel-wall"
+              tabindex="-1"
+            >
+              Muro
+            </button>
+            <button
+              id="tab-projector"
+              class="tab-btn"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tabpanel-projector"
+              tabindex="-1"
+            >
+              Proyector
+            </button>
+          </div>
+
+          <section
+            id="tabpanel-artwork"
+            class="tabpanel"
+            role="tabpanel"
+            aria-labelledby="tab-artwork"
+          >
+            <p id="artwork-empty" class="empty-state">
+              Selecciona una obra en el muro o coloca una desde el catálogo para editar sus medidas y herrajes.
+            </p>
+
+            <form id="artwork-form" class="inspector-form hidden">
+              <fieldset class="inspector-card">
+                <legend class="section-heading">Ficha técnica</legend>
+                <div class="field">
+                  <label for="art-title">Título</label>
+                  <input id="art-title" type="text" />
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="art-author">Autor</label>
+                    <input id="art-author" type="text" />
+                  </div>
+                  <div class="field">
+                    <label for="art-year">Año</label>
+                    <input id="art-year" type="text" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="art-medium">Técnica / Medio</label>
+                  <input id="art-medium" type="text" />
+                </div>
+              </fieldset>
+
+              <fieldset class="inspector-card">
+                <legend class="section-heading">Posición en muro (cm)</legend>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="pl-x-cm">Borde izq. (X)</label>
+                    <input id="pl-x-cm" type="number" step="0.1" />
+                  </div>
+                  <div class="field">
+                    <label for="pl-y-cm">Base al suelo (Y)</label>
+                    <input id="pl-y-cm" type="number" step="0.1" />
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="inspector-card">
+                <legend class="section-heading">Imagen y montaje (cm)</legend>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="art-w-cm">Ancho imagen</label>
+                    <input id="art-w-cm" type="number" min="1" step="0.1" />
+                  </div>
+                  <div class="field">
+                    <label for="art-h-cm">Alto imagen</label>
+                    <input id="art-h-cm" type="number" min="1" step="0.1" />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="art-mounting">Tipo de montaje</label>
+                  <select id="art-mounting">
+                    <option value="framed">Enmarcado (marco + passepartout)</option>
+                    <option value="direct">Montaje directo (dibond / acrílico / lona)</option>
+                    <option value="canvas">Bastidor / tela</option>
+                    <option value="polyptych_part">Pieza de díptico / políptico</option>
+                  </select>
+                </div>
+
+                <div id="framing-fields">
+                  <div class="field-row">
+                    <div class="field">
+                      <label for="frame-w-cm">Marco uniforme (cm)</label>
+                      <input id="frame-w-cm" type="number" min="0" step="0.1" />
+                    </div>
+                    <div class="field">
+                      <label for="frame-color">Color marco</label>
+                      <input id="frame-color" type="color" value="#1C1C1E" />
+                    </div>
+                  </div>
+                  <div class="field-row">
+                    <div class="field">
+                      <label for="pp-top-cm">Passepartout sup.</label>
+                      <input id="pp-top-cm" type="number" min="0" step="0.1" />
+                    </div>
+                    <div class="field">
+                      <label for="pp-bottom-cm">Passepartout inf.</label>
+                      <input id="pp-bottom-cm" type="number" min="0" step="0.1" />
+                    </div>
+                  </div>
+                  <div class="field-row">
+                    <div class="field">
+                      <label for="pp-left-cm">Passepartout izq.</label>
+                      <input id="pp-left-cm" type="number" min="0" step="0.1" />
+                    </div>
+                    <div class="field">
+                      <label for="pp-right-cm">Passepartout der.</label>
+                      <input id="pp-right-cm" type="number" min="0" step="0.1" />
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="inspector-card">
+                <legend class="section-heading">Anclaje / Perforación</legend>
+                <div class="field">
+                  <label for="hw-type">Sistema de colgado</label>
+                  <select id="hw-type">
+                    <option value="single_center">1 punto central</option>
+                    <option value="dual_points">2 puntos laterales</option>
+                  </select>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="hw-top-cm">Bajante desde borde sup.</label>
+                    <input id="hw-top-cm" type="number" min="0" step="0.1" />
+                  </div>
+                  <div class="field">
+                    <label for="hw-drop-cm">Caída de alambre</label>
+                    <input id="hw-drop-cm" type="number" min="0" step="0.1" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="hw-inset-cm">Margen lateral (2 puntos)</label>
+                  <input id="hw-inset-cm" type="number" min="0" step="0.1" />
+                </div>
+
+                <div id="anchor-readout" class="readout-box" aria-label="Coordenadas de perforación"></div>
+              </fieldset>
+
+              <label class="checkbox-field">
+                <input id="art-is-anchor" type="checkbox" />
+                <span>Pieza ancla (punto focal)</span>
+              </label>
+
+              <div class="field-actions">
+                <label class="checkbox-field">
+                  <input id="pl-locked" type="checkbox" />
+                  <span>Bloquear posición</span>
+                </label>
+                <button id="btn-remove-placement" type="button" class="btn btn-danger">
+                  Retirar del muro
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section
+            id="tabpanel-wall"
+            class="tabpanel hidden"
+            role="tabpanel"
+            aria-labelledby="tab-wall"
+          >
+            <form id="wall-form" class="inspector-form">
+              <fieldset class="inspector-card">
+                <legend class="section-heading">Dimensiones del muro</legend>
+                <div class="field">
+                  <label for="wall-name">Nombre del muro</label>
+                  <input id="wall-name" type="text" />
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="wall-w-cm">Ancho (cm)</label>
+                    <input id="wall-w-cm" type="number" min="50" step="1" />
+                  </div>
+                  <div class="field">
+                    <label for="wall-h-cm">Alto (cm)</label>
+                    <input id="wall-h-cm" type="number" min="50" step="1" />
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="wall-baseboard-cm">Zócalo (cm)</label>
+                    <input id="wall-baseboard-cm" type="number" min="0" step="0.5" />
+                  </div>
+                  <div class="field">
+                    <label for="wall-eye-cm">Eje visual (cm)</label>
+                    <input id="wall-eye-cm" type="number" min="20" step="0.5" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="wall-color">Color base del muro</label>
+                  <input id="wall-color" type="color" value="#F4F3EF" />
+                </div>
+              </fieldset>
+
+              <fieldset class="inspector-card">
+                <legend class="section-heading">Textura o fotografía del muro</legend>
+                <div class="field">
+                  <label for="wall-texture-preset">Acabado / textura</label>
+                  <select id="wall-texture-preset">
+                    <option value="none">Color liso</option>
+                    <option value="plaster">Estuco / yeso suave</option>
+                    <option value="concrete">Hormigón visto</option>
+                    <option value="brick">Ladrillo claro</option>
+                    <option value="wood">Madera vertical</option>
+                  </select>
+                </div>
+                <div class="field-actions">
+                  <button id="btn-wall-image" type="button" class="btn btn-sm btn-secondary">
+                    Cargar foto del muro
+                  </button>
+                  <button id="btn-wall-image-clear" type="button" class="btn btn-sm btn-secondary hidden">
+                    Quitar foto
+                  </button>
+                  <input
+                    id="wall-image-input"
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.tif,.tiff"
+                    hidden
+                  />
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="wall-image-fit">Ajuste imagen</label>
+                    <select id="wall-image-fit">
+                      <option value="cover">Cubrir muro</option>
+                      <option value="contain">Encajar completa</option>
+                      <option value="tile">Repetir patrón</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="wall-image-opacity">Opacidad</label>
+                    <input id="wall-image-opacity" type="range" min="0.15" max="1" step="0.05" value="1" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="wall-narrative-role">Rol en arco narrativo</label>
+                  <select id="wall-narrative-role">
+                    <option value="standard">Estándar</option>
+                    <option value="initial">1. Muro Inicial</option>
+                    <option value="development">2. Desarrollo</option>
+                    <option value="climax">3. Muro de Clímax (foco ancla)</option>
+                    <option value="epilogue">4. Desenlace</option>
+                  </select>
+                </div>
+              </fieldset>
+            </form>
+          </section>
+
+          <section
+            id="tabpanel-projector"
+            class="tabpanel hidden"
+            role="tabpanel"
+            aria-labelledby="tab-projector"
+          >
+            <form id="projector-form" class="inspector-form">
+              <details class="guide-box" open>
+                <summary class="guide-summary">¿Cómo proyectar 1:1 sobre el muro?</summary>
+                <ol class="guide-steps">
+                  <li>Marca 4 puntos reales en tu muro (o usa las 4 esquinas del muro).</li>
+                  <li>Conecta el proyector (2ª pantalla) y pulsa <strong>Abrir en proyector</strong>.</li>
+                  <li>Activa el <strong>Patrón P1–P4</strong> y arrastra las esquinas del calibrador hasta alinear las marcas en la pared.</li>
+                </ol>
+              </details>
+
+              <fieldset class="inspector-card">
+                <legend class="section-heading">Salida de proyector en sala</legend>
+                <div class="field">
+                  <label for="proj-display-select">Pantalla / Proyector destino</label>
+                  <select id="proj-display-select"></select>
+                </div>
+                <div class="field-actions">
+                  <button id="btn-proj-native" type="button" class="btn btn-primary">
+                    Abrir en proyector
+                  </button>
+                  <button id="btn-proj-web" type="button" class="btn btn-secondary">
+                    Abrir en navegador
+                  </button>
+                </div>
+
+                <label class="checkbox-field">
+                  <input id="proj-show-grid" type="checkbox" />
+                  <span>Mostrar patrón P1–P4 en muro</span>
+                </label>
+              </fieldset>
+
+              <fieldset class="inspector-card">
+                <legend class="section-heading">Guías proyectadas</legend>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="proj-color">Color de líneas</label>
+                    <select id="proj-color">
+                      <option value="cyan">Cian (muros cálidos)</option>
+                      <option value="white">Blanco (muros oscuros)</option>
+                      <option value="green">Verde láser (hormigón)</option>
+                      <option value="amber">Ámbar (alta luz)</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="proj-stroke">Grosor (px)</label>
+                    <input id="proj-stroke" type="number" min="1" max="8" step="1" />
+                  </div>
+                </div>
+
+                <label class="checkbox-field">
+                  <input id="proj-ghost" type="checkbox" />
+                  <span>Proyectar foto fantasma para validar ritmo</span>
+                </label>
+
+                <div class="field">
+                  <label for="proj-ghost-opacity">Opacidad foto fantasma</label>
+                  <input id="proj-ghost-opacity" type="range" min="0.05" max="0.8" step="0.05" />
+                </div>
+              </fieldset>
+
+              <fieldset class="inspector-card">
+                <legend class="section-heading">Tramo en muros largos (cm)</legend>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="proj-tile-x-cm">Inicio X (cm)</label>
+                    <input id="proj-tile-x-cm" type="number" min="0" step="1" />
+                  </div>
+                  <div class="field">
+                    <label for="proj-tile-w-cm">Ancho tiro (0=todo)</label>
+                    <input id="proj-tile-w-cm" type="number" min="0" step="1" />
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="inspector-card">
+                <legend class="section-heading">Calibración Keystone (4 esquinas)</legend>
+                <p class="helper-text">
+                  Arrastra las esquinas P1–P4 sobre el visor o ajusta sus coordenadas normalizadas (0–1) hasta cuadrar las marcas físicas del muro.
+                </p>
+                <svg
+                  id="keystone-pad"
+                  class="keystone-pad"
+                  viewBox="0 0 240 150"
+                  role="region"
+                  aria-label="Calibrador visual de 4 esquinas keystone"
+                ></svg>
+                <div id="keystone-controls" class="keystone-grid"></div>
+                <button id="btn-proj-reset-cal" type="button" class="btn btn-secondary">
+                  Ajustar P1–P4 al muro completo
+                </button>
+              </fieldset>
+            </form>
+          </section>
+        </aside>
+      </div>
+    </div>
+
+    <div id="sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+    <script type="module" src="/ui/studio/app.js"></script>
+  </body>
+</html>

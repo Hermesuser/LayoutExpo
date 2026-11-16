@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LayoutExpo — Proyector en Sala</title>
+    <link rel="icon" type="image/png" href="/ui/assets/icon.png" />
+    <link rel="stylesheet" href="/ui/tokens.css" />
+    <link rel="stylesheet" href="/ui/projector/styles.css" />
+  </head>
+  <body>
+    <main class="projector-root" aria-label="Salida calibrada de proyector para montaje">
+      <div id="projector-stage" class="projector-stage">
+        <svg id="projector-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Guías proyectadas sobre el muro"></svg>
+      </div>
+
+      <aside id="projector-hud" class="projector-hud" aria-label="Controles de proyección">
+        <div class="hud-info">
+          <span id="hud-wall-name" class="hud-title">Muro Principal</span>
+          <span id="hud-status" class="hud-meta">Sincronizado</span>
+        </div>
+        <div class="hud-actions">
+          <button id="btn-prev-tile" type="button" class="hud-btn hidden">← Tramo</button>
+          <button id="btn-next-tile" type="button" class="hud-btn hidden">Tramo →</button>
+          <button id="btn-toggle-grid" type="button" class="hud-btn">Patrón P1–P4 (G)</button>
+          <button id="btn-fullscreen" type="button" class="hud-btn">Pantalla completa (F)</button>
+          <button id="btn-hide-hud" type="button" class="hud-btn">Ocultar barra (H)</button>
+          <button id="btn-close-projector" type="button" class="hud-btn">Cerrar</button>
+        </div>
+      </aside>
+      <div id="projector-hint" class="projector-hint hidden" role="status" aria-live="polite">
+        Barra oculta. Pulsa H o Esc para mostrarla.
+      </div>
+    </main>
+    <script type="module" src="/ui/projector/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,93 @@
+/* Design System Tokens — LayoutExpo (ADR-005: Estudio Neutro 18% + Proyector #000000) */
+
+:root {
+  /* Superficies neutras acromáticas */
+  --surface-workspace: #1a1a1c;
+  --surface-panel: #242426;
+  --surface-elevated: #2e2e32;
+  --surface-hover: #38383d;
+
+  /* Bordes (>= 3:1 para controles interactivos) */
+  --border-subtle: #3e3e44;
+  --border-strong: #7e7e88;
+
+  /* Muro y calibrador */
+  --wall-default-bg: #f4f3ef;
+  --keystone-bg: #0f1218;
+  --keystone-grid: #232a35;
+  --keystone-accent: #38bdf8;
+  --keystone-label: #e5e7eb;
+  --resize-handle-fill: #ffffff;
+  --resize-handle-stroke: #4da3ff;
+
+  /* Texto (>= 4.5:1 WCAG 2.2 AA / AAA) */
+  --text-primary: #f5f5f7;
+  --text-secondary: #b8b8be;
+  --text-muted: #9898a0;
+
+  /* Acento y estados semánticos */
+  --accent-primary: #4da3ff;
+  --accent-primary-hover: #70b5ff;
+  --on-accent-primary: #0a0a0c;
+
+  --state-snap: #30d158;
+  --state-warning: #ffd60a;
+  --state-danger: #ff6961;
+  --focus-ring: #ffd60a;
+
+  /* Muro por defecto */
+  --wall-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+
+  /* Proyector (ADR-005) */
+  --projector-bg: #000000;
+  --projector-white: #ffffff;
+  --projector-cyan: #00e5ff;
+  --projector-green: #39ff14;
+  --projector-amber: #ffb300;
+
+  /* Tipografía */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+
+  /* Espaciado (base 4 px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radios */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Movimiento */
+  --ease-standard: 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border-subtle: #787882;
+    --border-strong: #a8a8b4;
+    --text-secondary: #dedee4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
