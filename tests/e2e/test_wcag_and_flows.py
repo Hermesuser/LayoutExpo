@@ -123,9 +123,7 @@ def test_studio_and_projector_e2e_wcag_and_keyboard_flows(live_server: tuple[str
 
             page.locator("#file-menu summary").click()
             assert page.locator("#file-menu").evaluate("el => el.open") is True
-            _assert_zero_wcag_violations(
-                axe.run(page, options=axe_options), "Menú Archivo abierto"
-            )
+            _assert_zero_wcag_violations(axe.run(page, options=axe_options), "Menú Archivo abierto")
             page.keyboard.press("Escape")
             assert page.locator("#file-menu").evaluate("el => el.open") is False
 
